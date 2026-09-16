@@ -14,8 +14,6 @@ frappe.ui.form.on("Batch", {
 		});
 	},
 	refresh: (frm) => {
-		frm.batch_dashboard_request_id = (frm.batch_dashboard_request_id || 0) + 1;
-
 		if (!frm.is_new()) {
 			frm.add_custom_button(__("View Ledger"), () => {
 				frappe.route_options = {
@@ -85,8 +83,6 @@ frappe.ui.form.on("Batch", {
 		);
 	},
 	make_dashboard: (frm) => {
-		const request_id = frm.batch_dashboard_request_id;
-
 		if (!frm.is_new()) {
 			let for_stock_levels = 0;
 			if (!frm.doc.batch_qty && frm.doc.expiry_date) {
@@ -103,10 +99,6 @@ frappe.ui.form.on("Batch", {
 					ignore_reserved_stock: 1,
 				},
 				callback: (r) => {
-					if (request_id !== frm.batch_dashboard_request_id) {
-						return;
-					}
-
 					if (!r.message || r.message.length === 0) {
 						frm.dashboard.add_comment(__("No stock available for this batch."), "Blue", true);
 						return;

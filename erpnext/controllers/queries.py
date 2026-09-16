@@ -801,7 +801,7 @@ def get_blanket_orders(doctype: str, txt: str, searchfield: str, start: int, pag
 	bo = frappe.qb.DocType("Blanket Order")
 	bo_item = frappe.qb.DocType("Blanket Order Item")
 
-	query = (
+	blanket_orders = (
 		frappe.qb.from_(bo)
 		.from_(bo_item)
 		.select(bo.name)
@@ -814,12 +814,10 @@ def get_blanket_orders(doctype: str, txt: str, searchfield: str, start: int, pag
 			& (bo.company == filters.get("company"))
 			& (bo.docstatus == 1)
 		)
+		.run()
 	)
 
-	if currency := filters.get("currency"):
-		query = query.where(bo.currency == currency)
-
-	return query.run()
+	return blanket_orders
 
 
 @frappe.whitelist()

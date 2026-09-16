@@ -350,13 +350,11 @@ class TransactionBase(StatusUpdater):
 		)
 
 	@frappe.whitelist()
-	def process_item_selection(
-		self, item_idx: int, reset_item_details: bool = False, parentfield: str = "items"
-	):
+	def process_item_selection(self, item_idx: int, reset_item_details: bool = False):
 		# Server side 'item' doc. Update this to reflect in UI
-		item_obj = self.get_selected_item_row(parentfield, item_idx)
+		item_obj = self.get("items", {"idx": item_idx})[0]
 
-		if not item_obj or not item_obj.item_code:
+		if not item_obj.item_code:
 			return
 
 		if cint(reset_item_details):
@@ -385,13 +383,6 @@ class TransactionBase(StatusUpdater):
 		self.handle_internal_parties(item_obj, item_details)
 		self.conversion_factor(item_obj, item_details)
 		self.calculate_taxes_and_totals()
-
-	def get_selected_item_row(self, parentfield: str, item_idx: int):
-		if not self.get_table_field_doctype(parentfield):
-			frappe.throw(_("{0} is not a child table of {1}").format(parentfield, self.doctype))
-
-		rows = self.get(parentfield, {"idx": item_idx})
-		return rows[0] if rows else None
 
 	def set_fetched_values(self, item_obj: object, item_details: dict) -> None:
 		for k, v in item_details.items():
@@ -466,35 +457,31 @@ class TransactionBase(StatusUpdater):
 			)
 
 	def copy_from_first_row(self, row, fields):
-		sibling_rows = self.get(row.parentfield) if row else None
-		if sibling_rows:
+		if self.items and row:
 			fields.extend([x.get("fieldname") for x in get_dimensions(True)[0]])
-			first_row = sibling_rows[0]
+			first_row = self.items[0]
 			[setattr(row, k, first_row.get(k)) for k in fields if hasattr(first_row, k)]
 
 	def add_free_item(self, item_obj: object, item_details: dict) -> None:
 		free_items = item_details.get("free_item_data")
-		if not free_items:
-			return
+		if free_items and len(free_items):
+			existing_free_items = [x for x in self.items if x.is_free_item]
+			for free_item in free_items:
+				_matches = [
+					x
+					for x in existing_free_items
+					if x.item_code == free_item.get("item_code")
+					and x.pricing_rules == free_item.get("pricing_rules")
+				]
+				if _matches:
+					row_to_modify = _matches[0]
+				else:
+					row_to_modify = self.append("items")
 
-		parentfield = item_obj.parentfield
-		existing_free_items = [x for x in self.get(parentfield) if x.is_free_item]
-		for free_item in free_items:
-			_matches = [
-				x
-				for x in existing_free_items
-				if x.item_code == free_item.get("item_code")
-				and x.pricing_rules == free_item.get("pricing_rules")
-			]
-			if _matches:
-				row_to_modify = _matches[0]
-			else:
-				row_to_modify = self.append(parentfield)
+				for k, _v in free_item.items():
+					setattr(row_to_modify, k, free_item.get(k))
 
-			for k, _v in free_item.items():
-				setattr(row_to_modify, k, free_item.get(k))
-
-			self.copy_from_first_row(row_to_modify, ["expense_account", "income_account"])
+				self.copy_from_first_row(row_to_modify, ["expense_account", "income_account"])
 
 	def conversion_factor(self, item_obj: object, item_details: dict) -> None:
 		if frappe.get_meta(item_obj.doctype).has_field("stock_qty"):

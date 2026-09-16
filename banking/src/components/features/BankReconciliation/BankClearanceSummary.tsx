@@ -205,9 +205,9 @@ const BankClearanceSummaryView = () => {
 
     const content = _("Below is a list of all accounting entries posted against the bank account {0} between {1} and {2}.", [`<strong>${bankAccount?.account}</strong>`, `<strong>${formattedFromDate}</strong>`, `<strong>${formattedToDate}</strong>`])
 
-    return <div className="flex min-h-0 flex-1 flex-col space-y-4 py-2">
+    return <div className="space-y-4 py-2">
 
-        <div className="shrink-0">
+        <div>
             <span className="text-p-sm">
                 <MarkdownRenderer content={content} />
             </span>
@@ -220,9 +220,8 @@ const BankClearanceSummaryView = () => {
                 data={data.message.result}
                 columns={clearanceColumns}
                 getRowId={(row) => `${row.payment_entry}-${row.posting_date}`}
-                className="min-h-0 flex-1"
-                maxHeight="none"
-                scrollAreaClassName="flex-1"
+                maxHeight="calc(100vh - 200px)"
+                scrollAreaClassName="min-h-[calc(100vh-200px)]"
                 emptyState={_("No rows to display.")}
             />
         ) : null}

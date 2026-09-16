@@ -4,6 +4,7 @@ import frappe
 from frappe import _, bold
 from frappe.query_builder import Case
 from frappe.utils import flt, get_link_to_form
+from pypika.terms import ValueWrapper
 
 from erpnext.stock.serial_batch_bundle import get_serial_batch_list_from_item
 
@@ -242,7 +243,7 @@ class SubcontractingInwardController:
 			for item in self.get("items")
 			if not item.is_finished_item
 			and not item.secondary_item_type
-			and not item.valuation_type
+			and not item.is_legacy_scrap_item
 			and frappe.get_cached_value("Item", item.item_code, "is_customer_provided_item")
 		]
 
@@ -379,7 +380,7 @@ class SubcontractingInwardController:
 			if self.purpose in ["Subcontracting Delivery", "Subcontracting Return", "Manufacture"]:
 				for item in self.items:
 					if (
-						item.is_finished_item or item.secondary_item_type or item.valuation_type
+						item.is_finished_item or item.secondary_item_type or item.is_legacy_scrap_item
 					) and item.valuation_rate == 0:
 						item.allow_zero_valuation_rate = 1
 
@@ -479,7 +480,7 @@ class SubcontractingInwardController:
 				self.validate_delivery_on_save()
 			else:
 				for item in self.items:
-					if not item.secondary_item_type and not item.valuation_type:
+					if not item.secondary_item_type and not item.is_legacy_scrap_item:
 						delivered_qty, returned_qty = frappe.get_value(
 							"Subcontracting Inward Order Item",
 							item.scio_detail,
@@ -508,13 +509,21 @@ class SubcontractingInwardController:
 				)
 
 			table = frappe.qb.DocType("Subcontracting Inward Order Item")
-			allowed_qty = table.produced_qty
-			if not allow_delivery_of_overproduced_qty:
-				allowed_qty = Case().when(table.produced_qty < table.qty, table.produced_qty).else_(table.qty)
-
 			query = (
 				frappe.qb.from_(table)
-				.select((allowed_qty - table.delivered_qty).as_("max_allowed_qty"))
+				.select(
+					(
+						Case()
+						.when(
+							# bool() so the literal renders as true/false; postgres rejects `OR <integer>`
+							(table.produced_qty < table.qty)
+							| ValueWrapper(bool(allow_delivery_of_overproduced_qty)),
+							table.produced_qty,
+						)
+						.else_(table.qty)
+						- table.delivered_qty
+					).as_("max_allowed_qty")
+				)
 				.where((table.name == item.scio_detail) & (table.docstatus == 1))
 			)
 			max_allowed_qty = query.run(pluck="max_allowed_qty")
@@ -541,7 +550,7 @@ class SubcontractingInwardController:
 						bold(
 							frappe.get_cached_value(
 								"Subcontracting Inward Order Item"
-								if not item.secondary_item_type and not item.valuation_type
+								if not item.secondary_item_type and not item.is_legacy_scrap_item
 								else "Subcontracting Inward Order Secondary Item",
 								item.scio_detail,
 								"stock_uom",
@@ -593,7 +602,7 @@ class SubcontractingInwardController:
 				)
 
 			for item in [item for item in self.items if not item.is_finished_item]:
-				if item.secondary_item_type or item.valuation_type:
+				if item.secondary_item_type or item.is_legacy_scrap_item:
 					scio_secondary_item = frappe.get_value(
 						"Subcontracting Inward Order Secondary Item",
 						{
@@ -652,7 +661,7 @@ class SubcontractingInwardController:
 			for item in self.items:
 				doctype = (
 					"Subcontracting Inward Order Item"
-					if not item.secondary_item_type and not item.valuation_type
+					if not item.secondary_item_type and not item.is_legacy_scrap_item
 					else "Subcontracting Inward Order Secondary Item"
 				)
 				qty_map[doctype][item.scio_detail] += (
@@ -793,7 +802,7 @@ class SubcontractingInwardController:
 		items = [
 			item
 			for item in self.items
-			if not item.is_finished_item and not item.secondary_item_type and not item.valuation_type
+			if not item.is_finished_item and not item.secondary_item_type and not item.is_legacy_scrap_item
 		]
 		if not items:
 			return
@@ -904,7 +913,7 @@ class SubcontractingInwardController:
 	def update_inward_order_secondary_items(self):
 		if (scio := self.subcontracting_inward_order) and self.purpose == "Manufacture":
 			secondary_items_list = [
-				item for item in self.items if item.secondary_item_type or item.valuation_type
+				item for item in self.items if item.secondary_item_type or item.is_legacy_scrap_item
 			]
 
 			secondary_items = defaultdict(float)
@@ -1161,11 +1170,7 @@ def get_fg_reference_names(
 		"Subcontracting Inward Order Item",
 		limit_start=start,
 		limit_page_length=page_len,
-		filters={"parent": filters.get("parent"), "docstatus": 1},
-		or_filters=[
-			["name", "like", f"%{txt}%"],
-			["item_code", "like", f"%{txt}%"],
-		],
+		filters={"parent": filters.get("parent"), "item_code": ("like", f"%{txt}%"), "docstatus": 1},
 		fields=["name", "item_code", "delivery_warehouse"],
 		as_list=True,
 		order_by="idx",

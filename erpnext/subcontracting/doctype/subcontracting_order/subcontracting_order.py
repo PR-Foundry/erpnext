@@ -120,7 +120,6 @@ class SubcontractingOrder(SubcontractingController):
 		self.validate_service_items()
 		self.validate_supplied_items()
 		self.set_missing_values()
-		self.validate_with_previous_doc()
 		self.reset_default_field_value("set_warehouse", "items", "warehouse")
 
 	def on_submit(self):
@@ -131,18 +130,6 @@ class SubcontractingOrder(SubcontractingController):
 	def on_cancel(self):
 		self.update_status()
 		self.update_subcontracted_quantity_in_po(cancel=True)
-
-	def validate_with_previous_doc(self):
-		super().validate_with_previous_doc(
-			{
-				"Purchase Order Item": {
-					"ref_dn_field": "purchase_order_item",
-					"compare_fields": [["project", "="]],
-					"is_child_table": True,
-					"allow_duplicate_prev_row_id": True,
-				},
-			}
-		)
 
 	def validate_purchase_order_for_subcontracting(self):
 		if self.purchase_order:
@@ -255,22 +242,10 @@ class SubcontractingOrder(SubcontractingController):
 			if si.fg_item:
 				item = frappe.get_doc("Item", si.fg_item)
 
-				(
-					qty,
-					subcontracted_qty,
-					fg_item_qty,
-					production_plan_sub_assembly_item,
-					project,
-				) = frappe.db.get_value(
+				qty, subcontracted_qty, fg_item_qty, production_plan_sub_assembly_item = frappe.db.get_value(
 					"Purchase Order Item",
 					si.purchase_order_item,
-					[
-						"qty",
-						"subcontracted_qty",
-						"fg_item_qty",
-						"production_plan_sub_assembly_item",
-						"project",
-					],
+					["qty", "subcontracted_qty", "fg_item_qty", "production_plan_sub_assembly_item"],
 				)
 				available_qty = flt(qty) - flt(subcontracted_qty)
 
@@ -307,7 +282,6 @@ class SubcontractingOrder(SubcontractingController):
 						"material_request": si.material_request,
 						"material_request_item": si.material_request_item,
 						"production_plan_sub_assembly_item": production_plan_sub_assembly_item,
-						"project": project,
 					}
 				)
 			else:

@@ -106,8 +106,6 @@ def get_linked_payments_for_doc(
 	company: str | None = None, doctype: str | None = None, docname: str | None = None
 ) -> list:
 	if company and doctype and docname:
-		frappe.has_permission(doctype, doc=docname, throw=True)
-
 		_dt = doctype
 		_dn = docname
 		ple = qb.DocType("Payment Ledger Entry")

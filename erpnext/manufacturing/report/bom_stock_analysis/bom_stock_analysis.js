@@ -9,7 +9,6 @@ frappe.query_reports["BOM Stock Analysis"] = {
 			fieldtype: "Link",
 			options: "BOM",
 			reqd: 1,
-			get_query: () => ({ filters: { docstatus: 1 } }),
 		},
 		{
 			fieldname: "warehouse",

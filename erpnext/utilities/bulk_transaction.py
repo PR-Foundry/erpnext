@@ -52,7 +52,6 @@ def transaction_processing(
 
 @frappe.whitelist()
 def retry(date: str | None = None):
-	frappe.only_for("System Manager")
 	if not date:
 		date = today()
 

@@ -56,9 +56,7 @@ class LedgerMerge(Document):
 
 @frappe.whitelist()
 def form_start_merge(docname: str):
-	lm_doc = frappe.get_doc("Ledger Merge", docname)
-	lm_doc.check_permission("write")
-	return lm_doc.start_merge()
+	return frappe.get_doc("Ledger Merge", docname).start_merge()
 
 
 def start_merge(docname):

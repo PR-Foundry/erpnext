@@ -54,11 +54,6 @@ class DeliveryTrip(Document):
 		self.update_status()
 		self.update_delivery_notes(delete=True)
 
-	def after_mapping(self, source_doc):
-		for stop in self.delivery_stops[:]:
-			if not any(stop.get(df.fieldname) for df in stop.meta.fields):
-				self.remove(stop)
-
 	def validate(self):
 		if self._action == "submit" and not self.driver:
 			frappe.throw(_("A driver must be set to submit."))
@@ -85,7 +80,7 @@ class DeliveryTrip(Document):
 
 	def validate_stop_addresses(self):
 		for stop in self.delivery_stops:
-			if stop.address and not stop.customer_address:
+			if not stop.customer_address:
 				stop.customer_address = get_address_display(frappe.get_doc("Address", stop.address).as_dict())
 
 	def validate_delivery_note_not_draft(self):

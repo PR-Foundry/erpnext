@@ -446,7 +446,7 @@ def item_query(doctype: Any, txt: str | None, searchfield: Any, start: int, page
 					"and",
 					["items.secondary_item_type", "is", "not set"],
 					"and",
-					["items.valuation_type", "is", "not set"],
+					["items.is_legacy_scrap_item", "=", 0],
 				]
 			)
 			if purpose == "Manufacture":

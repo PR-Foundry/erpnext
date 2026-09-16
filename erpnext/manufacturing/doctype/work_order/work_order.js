@@ -139,10 +139,6 @@ frappe.ui.form.on("Work Order", {
 		frm.fields_dict["secondary_items"].grid.wrapper?.find("> .control-label").text(label);
 	},
 
-	company: function (frm) {
-		erpnext.work_order.set_default_warehouse(frm);
-	},
-
 	source_warehouse: function (frm) {
 		let transaction_controller = new erpnext.TransactionController();
 		transaction_controller.autofill_warehouse(
@@ -1118,16 +1114,14 @@ erpnext.work_order = {
 	},
 
 	set_default_warehouse: function (frm) {
-		if (frm.doc.company && !(frm.doc.wip_warehouse || frm.doc.fg_warehouse)) {
-			let company = frm.doc.company;
+		if (!(frm.doc.wip_warehouse || frm.doc.fg_warehouse)) {
 			frappe.call({
 				method: "erpnext.manufacturing.doctype.work_order.work_order.get_default_warehouse",
 				args: {
-					company: company,
+					company: frm.doc.company,
 				},
 				callback: function (r) {
-					// ignore stale responses if the company changed while the request was in flight
-					if (!r.exe && frm.doc.company === company) {
+					if (!r.exe) {
 						frm.set_value("wip_warehouse", r.message.wip_warehouse);
 						frm.set_value("fg_warehouse", r.message.fg_warehouse);
 						frm.set_value("scrap_warehouse", r.message.scrap_warehouse);

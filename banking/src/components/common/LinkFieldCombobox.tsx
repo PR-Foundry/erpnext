@@ -10,7 +10,6 @@ import { ChevronDownIcon, ExternalLink } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../ui/command";
-import useResetScrollOnSearch from "@/hooks/useResetScrollOnSearch";
 import _ from "@/lib/translate";
 import ErrorBanner from "../ui/error-banner";
 import MarkdownRenderer from "../ui/markdown";
@@ -150,10 +149,6 @@ const LinkFieldCombobox = ({
 
     const buttonRef = useRef<HTMLButtonElement>(null)
 
-    // Results change as the search runs, so pin the scroll back to the top to keep the
-    // auto-selected first result in view.
-    const listRef = useResetScrollOnSearch(searchInput)
-
     const [width, setWidth] = useState(320)
 
     useLayoutEffect(() => {
@@ -269,7 +264,7 @@ const LinkFieldCombobox = ({
                 {error && <ErrorBanner error={error} />}
                 <Command shouldFilter={false} className="w-full">
                     <CommandInput placeholder={placeholder} onValueChange={setSearchInput} />
-                    <CommandList ref={listRef}>
+                    <CommandList>
                         <CommandEmpty>{isLoading ? _("Loading...") : _("No results found.")}</CommandEmpty>
                         <CommandGroup>
                             {items?.map((result) => (
@@ -277,7 +272,7 @@ const LinkFieldCombobox = ({
                                     <span className="font-medium">
                                         {result.label || result.value}
                                     </span>
-                                    {result.description && <span className="text-p-xs text-ink-gray-5">
+                                    {result.description && <span className="text-xs text-ink-gray-5">
                                         <MarkdownRenderer content={result.description} />
                                     </span>}
                                 </CommandItem>

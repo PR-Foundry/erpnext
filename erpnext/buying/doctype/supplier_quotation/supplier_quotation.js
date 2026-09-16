@@ -34,10 +34,7 @@ erpnext.buying.SupplierQuotationController = class SupplierQuotationController e
 		if (this.frm.doc.__islocal && !this.frm.doc.valid_till) {
 			this.frm.set_value("valid_till", frappe.datetime.add_months(this.frm.doc.transaction_date, 1));
 		}
-		if (
-			this.frm.doc.docstatus === 1 &&
-			!["Stopped", "Ordered", "Expired"].includes(this.frm.doc.status)
-		) {
+		if (this.frm.doc.docstatus === 1) {
 			this.frm.add_custom_button(
 				__("Purchase Order"),
 				this.make_purchase_order.bind(this),

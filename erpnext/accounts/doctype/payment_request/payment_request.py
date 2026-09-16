@@ -1399,7 +1399,6 @@ def get_irequests_of_payment_request(doc: str | None = None) -> list:
 @frappe.whitelist()
 def get_available_payment_schedules(reference_doctype: str, reference_name: str):
 	ref_doc = frappe.get_doc(reference_doctype, reference_name)
-	ref_doc.check_permission()
 
 	if not hasattr(ref_doc, "payment_schedule") or not ref_doc.payment_schedule:
 		return []

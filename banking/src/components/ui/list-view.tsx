@@ -387,7 +387,7 @@ function ListViewInner<TData>({
                                     )}
                                     role="columnheader"
                                 >
-                                    <div className="min-w-0 flex-1 truncate leading-snug">
+                                    <div className="min-w-0 flex-1 truncate">
                                         {header.isPlaceholder
                                             ? null
                                             : flexRender(header.column.columnDef.header, header.getContext())}

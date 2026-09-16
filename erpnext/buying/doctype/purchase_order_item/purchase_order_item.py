@@ -29,7 +29,6 @@ class PurchaseOrderItem(Document):
 		blanket_order_rate: DF.Currency
 		bom: DF.Link | None
 		brand: DF.Link | None
-		closed: DF.Check
 		company_total_stock: DF.Float
 		conversion_factor: DF.Float
 		cost_center: DF.Link | None

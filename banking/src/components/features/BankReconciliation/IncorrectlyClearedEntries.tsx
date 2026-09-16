@@ -181,9 +181,9 @@ const IncorrectlyClearedEntriesView = () => {
 
     const entriesContent = _("Entries below have a posting date after {0} but the clearance date is before {1}.", [`<strong>${formattedToDate}</strong>`, `<strong>${formattedToDate}</strong>`])
 
-    return <div className="flex min-h-0 flex-1 flex-col space-y-4 py-2">
+    return <div className="space-y-4 py-2">
 
-        <div className="shrink-0">
+        <div>
             <span className="text-p-sm">
                 <MarkdownRenderer content={content} />
                 <br />
@@ -198,15 +198,13 @@ const IncorrectlyClearedEntriesView = () => {
         {error && <ErrorBanner error={error} />}
 
         {data && data.message.result.length > 0 && (
-            <div className="flex min-h-0 flex-1 flex-col space-y-2">
-                <p className="shrink-0 text-ink-gray-5 text-sm">{_("Incorrectly cleared entries as per the report.")}</p>
+            <div className="space-y-2">
+                <p className="text-ink-gray-5 text-sm">{_("Incorrectly cleared entries as per the report.")}</p>
                 <ListView
                     data={data.message.result}
                     columns={incorrectlyClearedColumns}
                     getRowId={(row) => `${row.payment_entry}-${row.posting_date}`}
-                    className="min-h-0 flex-1"
-                    maxHeight="none"
-                    scrollAreaClassName="flex-1"
+                    maxHeight="min(70vh, 640px)"
                     emptyState={_("No rows to display.")}
                 />
             </div>
